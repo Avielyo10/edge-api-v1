@@ -1,0 +1,389 @@
+openapi: 3.0.1
+info:
+  license:
+    name: MIT
+  title: edge-api
+  version: 1.0.0
+paths:
+  /images:
+    get:
+      operationId: getImages
+      parameters:
+        - name: sort_by
+          in: query
+          description: "fields: created_at, distribution, name, status. To sort DESC use - before the fields."
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: "field: filter by name"
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: "field: filter by status"
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 100
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ImageResponse"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Not Found
+      default:
+        description: Unexpected error
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Error'
+      summary: Lists all images for an account.
+    post:
+      operationId: createImage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateImageRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageResponse"
+          description: Created
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      summary: Composes an image from Image Builder service.
+  /images/{imageId}:
+    get:
+      operationId: getImage
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageResponse"
+          description: OK
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      summary: Gets an image by ID.
+    delete:
+      operationId: deleteImage
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          description: ImageID to delete.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Image deletion request has succeeded, no content returned.
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      summary: Deletes an image.
+    patch:
+      operationId: updateImage
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          description: ImageID to update.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateImageRequest"
+        required: true
+      responses:
+        "204":
+          description: Image update request has succeeded, no content returned.
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      summary: Updates an image.
+  /images/{imageId}/update:
+    post:
+      operationId: createNewVersion
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          description: ImageID to promote.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpgradeImageRequest"
+        required: true
+      responses:
+        "204":
+          description: Image upgrade request has succeeded, no content returned.
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      summary: Upgrades an image to a new version.
+    delete:
+      operatioId: cancelImageUpdate
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          description: ImageID to cancel update for.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Image update cancellation request has succeeded, no content returned.
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      summary: Cancels an image update.
+components:
+  schemas:
+    Name:
+      type: string
+      example: "rhel-8.4-base"
+    Description:
+      type: string
+      example: "RHEL 8.4 Base"
+    Username:
+      type: string
+      example: "admin"
+    SSHKey:
+      type: string
+      example: >-
+        ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAklOUpkDHrfHY17SbrmTIpNLTGK9Tjom/BWDSU GPl+nafzlHDTYW7hdI4yZ5ew18JH4JW9jbhUFrviQzM7xlELEVf4h9lFX5QVkbPppSwg0cda3 Pbv7kOdJ/MTyBlWXFCR+HAo3FXRitBqxiX1nKhXpHAZsMciLq8V6RjsNAQwdsdMFvSlVK/7XA t3FaoJoAsncM1Q9x5+3V0Ww68/eIFmb1zuUFljQJKprrX88XypNDvjYNby6vw/Pb0rwert/En mZ+AW4OZPnTPI89ZPmVMLuayrD2cE86Z/il8b+gw3r3+1nKatmIkjn2so1d01QraTlMqVSsbx NrRFi9wrf+M7Q== engineer@redhat.com
+    Tags:
+      type: array
+      items:
+        type: string
+      example:
+        - rhel-8.4-base
+        - rhel-8.4
+    Packages:
+      type: array
+      items:
+        type: string
+      example:
+        - docker
+        - docker-ce
+    OutputTypes:
+      type: array
+      items:
+        type: string
+      example:
+        - rhel-edge-installer
+        - rhel-edge-commit
+    Repository:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "rhel-8.4-base"
+        url:
+          type: string
+          example: "https://registry.redhat.com/rhel8.repo"
+    Repositories:
+      type: array
+      items:
+        $ref: "#/components/schemas/Repository"
+    UUID:
+      type: string
+      format: uuid
+      example: "f0d9e6e0-e5b5-11e9-b0b4-0a580a4a00e0"
+    Status:
+      type: string
+      example: "success"
+      enum:
+        - success
+        - error
+        - building
+    CreatedAt:
+      format: date-time
+      example: "2019-01-01T00:00:00Z"
+    UpdatedAt:
+      format: date-time
+      example: "2019-01-01T00:00:00Z"
+    DeletedAt:
+      format: date-time
+      example: "2019-01-01T00:00:00Z"
+    Distribution:
+      type: string
+      example: "rhel-8.4-base"
+    Version:
+      type: integer
+      example: 1
+    Image:
+      type: object
+      properties:
+        uuid:
+          $ref: "#/components/schemas/UUID"
+        createdAt:
+          $ref: "#/components/schemas/CreatedAt"
+        updatedAt:
+          $ref: "#/components/schemas/UpdatedAt"
+        deletedAt:
+          $ref: "#/components/schemas/DeletedAt"
+        name:
+          $ref: "#/components/schemas/Name"
+        description:
+          $ref: "#/components/schemas/Description"
+        username:
+          $ref: "#/components/schemas/Username"
+        sshKey:
+          $ref: "#/components/schemas/SSHKey"
+        distribution:
+          $ref: "#/components/schemas/Distribution"
+        version:
+          $ref: "#/components/schemas/Version"
+        status:
+          $ref: "#/components/schemas/Status"
+        tags:
+          $ref: "#/components/schemas/Tags"
+        packages:
+          $ref: "#/components/schemas/Packages"
+        OutputTypes:
+          $ref: "#/components/schemas/OutputTypes"
+        repositories:
+          $ref: "#/components/schemas/Repositories"
+    CreateImageRequest:
+      type: object
+      properties:
+        name:
+          $ref: "#/components/schemas/Name"
+        description:
+          $ref: "#/components/schemas/Description"
+        username:
+          $ref: "#/components/schemas/Username"
+        sshKey:
+          $ref: "#/components/schemas/SSHKey"
+        distribution:
+          $ref: "#/components/schemas/Distribution"
+        tags:
+          $ref: "#/components/schemas/Tags"
+        packages:
+          $ref: "#/components/schemas/Packages"
+        repositories:
+          $ref: "#/components/schemas/Repositories"
+        output_type:
+          $ref: "#/components/schemas/OutputTypes"
+    UpdateImageRequest:
+      type: object
+      properties:
+        name:
+          $ref: "#/components/schemas/Name"
+        description:
+          $ref: "#/components/schemas/Description"
+        tags:
+          type: object
+          properties:
+            add:
+              $ref: "#/components/schemas/Tags"
+            remove:
+              $ref: "#/components/schemas/Tags"
+    UpgradeImageRequest:
+      type: object
+      properties:
+        name:
+          $ref: "#/components/schemas/Name"
+        description:
+          $ref: "#/components/schemas/Description"
+        tags:
+          type: object
+          properties:
+            add:
+              $ref: "#/components/schemas/Tags"
+            remove:
+              $ref: "#/components/schemas/Tags"
+        packages:
+          type: object
+          properties:
+            add:
+              $ref: "#/components/schemas/Packages"
+            remove:
+              $ref: "#/components/schemas/Packages"
+    ImageResponse:
+      type: object
+      properties:
+        uuid:
+          $ref: "#/components/schemas/UUID"
+        name:
+          $ref: "#/components/schemas/Name"
+        status:
+          $ref: "#/components/schemas/Status"
+        created_at:
+          $ref: "#/components/schemas/CreatedAt"
+        updated_at:
+          $ref: "#/components/schemas/UpdatedAt"
+        deleted_at:
+          $ref: "#/components/schemas/DeletedAt"
+        distribution:
+          $ref: "#/components/schemas/Distribution"
+        version:
+          $ref: "#/components/schemas/Version"
+        description:
+          $ref: "#/components/schemas/Description"
+        output_type:
+          $ref: "#/components/schemas/OutputTypes"
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+      required:
+        - code
+        - message

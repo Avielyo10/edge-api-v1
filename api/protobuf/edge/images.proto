@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package proto;
+import "api/protobuf/edge/common.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/Avielyo10/edge-api/internal/proto";
+
+service ImagesService {
+   rpc AddImageToUpdateQueue(ImageRequest) returns (google.protobuf.Empty);
+}
+
+enum ImageStatus {
+    SUCCESS = 0;
+    BUILDING = 1;
+    ERROR = 2;
+}
+
+message Image {
+    optional Base base = 1;
+    optional ImageStatus status = 2;
+}
+
+message ImageRequest {
+    repeated Image images = 1;
+}
